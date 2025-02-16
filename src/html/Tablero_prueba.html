@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Monopoly 3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <script>
+        // Crear escena, cámara y renderizador
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Posición inicial de la cámara
+        camera.position.set(0, 10, 10);
+        camera.lookAt(0, 0, 0);
+
+        // Crear el tablero (Plano base)
+        const tableroGeometry = new THREE.PlaneGeometry(10, 10);
+        const tableroMaterial = new THREE.MeshBasicMaterial({ color: 0x008000, side: THREE.DoubleSide });
+        const tablero = new THREE.Mesh(tableroGeometry, tableroMaterial);
+        tablero.rotation.x = -Math.PI / 2; // Girar para que quede plano
+        scene.add(tablero);
+
+        // Datos de las casillas
+        const casillasNombres = [
+            "Inicio", "Mediterranean Ave", "Comunidad 1", "Baltic Ave", "Impuesto 1",
+            "Estación 1", "Oriental Ave", "Suerte 1", "Vermont Ave", "Connecticut Ave",
+            "Cárcel", "St. Charles Place", "Electricidad", "States Ave", "Virginia Ave",
+            "Estación 2", "St. James Place", "Comunidad 2", "Tennessee Ave", "Nueva York Ave",
+            "Parking Libre", "Kentucky Ave", "Suerte 2", "Indiana Ave", "Illinois Ave",
+            "Estación 3", "Atlantic Ave", "Ventnor Ave", "Agua", "Marvin Gardens",
+            "Ve a la Cárcel", "Pacific Ave", "North Carolina Ave", "Comunidad 3", "Pennsylvania Ave",
+            "Estación 4", "Suerte 3", "Park Place", "Impuesto 2", "Boardwalk"
+        ];
+
+        // Crear las casillas
+        const casillas = [];
+        const casillasGroup = new THREE.Group();
+        const casillaSize = 1;
+        let index = 0;
+
+        for (let i = 0; i < 10; i++) {
+            // Parte inferior del tablero
+            crearCasilla(i - 4.5, -4.5, casillasNombres[index++]);
+        }
+        for (let i = 1; i < 10; i++) {
+            // Lado derecho
+            crearCasilla(4.5, i - 4.5, casillasNombres[index++]);
+        }
+        for (let i = 1; i < 10; i++) {
+            // Parte superior
+            crearCasilla(4.5 - i, 4.5, casillasNombres[index++]);
+        }
+        for (let i = 1; i < 9; i++) {
+            // Lado izquierdo (sin repetir esquina)
+            crearCasilla(-4.5, 4.5 - i, casillasNombres[index++]);
+        }
+
+        // Agregar las casillas a la escena
+        scene.add(casillasGroup);
+
+        function crearCasilla(x, y, nombre) {
+            const geometry = new THREE.BoxGeometry(casillaSize, 0.2, casillaSize);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const casilla = new THREE.Mesh(geometry, material);
+            casilla.position.set(x, 0.1, y);
+            casilla.userData = { nombre };
+            casillas.push(casilla);
+            casillasGroup.add(casilla);
+        }
+
+        // Raycaster para detectar clics
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Evento de clic para detectar casillas seleccionadas
+        window.addEventListener("click", (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(casillas);
+
+            if (intersects.length > 0) {
+                const casillaSeleccionada = intersects[0].object;
+                alert(`Casilla seleccionada: ${casillaSeleccionada.userData.nombre}`);
+                casillaSeleccionada.material.color.set(0xff0000);
+            }
+        });
+
+        // Animación
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
