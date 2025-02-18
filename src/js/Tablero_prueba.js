@@ -444,10 +444,12 @@ let index = 0;
 const boardSize = 20; // Tamaño del tablero (20x20)
 
 for (let i = 0; i < 11; i++) {
-    // Parte inferior del tablero
+    // Parte superior del tablero
     crearCasilla(i * casillaSize - boardSize / 2, -boardSize / 2, casillasNombres[index++]);
 }
-for (let i = 1; i < 11; i++) {
+
+//trabajar solo con la primera fila para mas precision
+/*for (let i = 1; i < 11; i++) {
     // Lado derecho
     crearCasilla(boardSize / 2, i * casillaSize - boardSize / 2, casillasNombres[index++]);
 }
@@ -459,7 +461,7 @@ for (let i = 1; i < 10; i++) {
     // Lado izquierdo (sin repetir esquina)
     crearCasilla(-boardSize / 2, boardSize / 2 - i * casillaSize, casillasNombres[index++]);
 }
-
+*/
 // Agregar las casillas a la escena
 scene.add(casillasGroup);
 
