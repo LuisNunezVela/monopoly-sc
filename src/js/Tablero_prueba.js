@@ -3,6 +3,8 @@ import * as THREE from "three";
 import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18.2/+esm"
 
+import { propiedades } from "./casillas.js";
+
 const containerEl = document.querySelector(".container");
 const canvasEl = document.querySelector("#canvas");
 
@@ -443,9 +445,8 @@ const casillaSize = 2;
 let index = 0;
 const boardSize = 20; // Tamaño del tablero (20x20)
 
-for (let i = 0; i < 11; i++) {
-    // Parte superior del tablero
-    crearCasilla(i * casillaSize - boardSize / 2, -boardSize / 2, casillasNombres[index++]);
+for (let i = 0; i < propiedades.length; i++) {
+    crearCasilla(i * casillaSize - boardSize / 2, -boardSize / 2, propiedades[i]);
 }
 
 //trabajar solo con la primera fila para mas precision
@@ -465,12 +466,15 @@ for (let i = 1; i < 10; i++) {
 // Agregar las casillas a la escena
 scene.add(casillasGroup);
 
-function crearCasilla(x, y, nombre) {
+function crearCasilla(x, y, propiedad) {
     const geometry = new THREE.BoxGeometry(casillaSize, 0.2, casillaSize);
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const casilla = new THREE.Mesh(geometry, material);
     casilla.position.set(x, 0.1, y);
-    casilla.userData = { nombre };
+    
+    // Asociar la propiedad a la casilla
+    casilla.userData = { propiedad };
+    
     casillas.push(casilla);
     casillasGroup.add(casilla);
 }
@@ -479,17 +483,22 @@ function crearCasilla(x, y, nombre) {
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Evento de clic para detectar casillas seleccionadas
 window.addEventListener("click", (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(casillas);
 
     if (intersects.length > 0) {
         const casillaSeleccionada = intersects[0].object;
-        alert(`Casilla seleccionada: ${casillaSeleccionada.userData.nombre}`);
-        casillaSeleccionada.material.color.set(0xff0000);
+        const propiedad = casillaSeleccionada.userData.propiedad;
+
+        if (propiedad) {
+            propiedad.mostrarInfo(); // Muestra la info en la consola
+            alert(`📍 ${propiedad.nombre}\n💰 Precio de compra: $${propiedad.precioCompra}\n🏠 Precio de alquiler: $${propiedad.precioAlquiler}`);
+            casillaSeleccionada.material.color.set(0xff0000);
+        }
     }
 });
 // Variables para la rotación de la cámara con el mouse
