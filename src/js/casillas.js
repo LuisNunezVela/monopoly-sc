@@ -19,4 +19,5 @@ export const propiedades = [
     new Propiedad("Avenida Brasil", 300, 35),
     new Propiedad("Avenida Pedraza", 250, 30),
     new Propiedad("Avenida Murillo", 400, 50),
+    new Propiedad("Avenida Banzer", 350, 40),
 ];

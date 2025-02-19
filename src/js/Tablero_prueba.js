@@ -30,10 +30,62 @@ const params = {
     throw: throwMe,
 };
 
+function movePlayer(player, diceRoll) {
+    player.position += diceRoll;
+
+    // Si pasa la casilla de salida (suponiendo que hay 40 casillas)
+    if (player.position >= casillas.length) {
+        player.position -= casillas.length; // Reinicia en la casilla 0
+        player.money += 200; // Recibe dinero por pasar por salida
+        console.log(`${player.name} pasó por salida y recibió $200.`);
+    }
+
+    console.log(`${player.name} ahora está en la casilla ${player.position}`);
+
+    // Mueve la ficha del jugador en Three.js
+    animatePlayerMovement(playerMesh, player.position);
+}
+
+function animatePlayerMovement(playerMesh, targetIndex) {
+    const targetPosition = casillas[targetIndex].position;
+
+    const animationDuration = 1000; // 1 segundo
+    const startTime = Date.now();
+    const startPos = playerMesh.position.clone();
+
+    function animate() {
+        const elapsedTime = Date.now() - startTime;
+        const t = Math.min(elapsedTime / animationDuration, 1); // Progresión de la animación (0 a 1)
+
+        // Interpolación de la posición
+        playerMesh.position.lerpVectors(startPos, targetPosition, t);
+
+        if (t < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    animate();
+}
+
 function throwMe() {
     simulationOn = true;
-    throwDice();
+    throwDice((diceRoll) => {
+        movePlayer(player1, diceRoll);
+    });
 }
+
+const player1 = {
+    name: "Jugador 1",
+    position: 0,  // Casilla actual en el tablero
+    money: 1500,  // Dinero inicial
+    properties: [], // Lista de propiedades que posee
+    inJail: false,  // Estado si está en la cárcel
+};
+
+
+
+
 
 
 const diceArray = [];
@@ -379,18 +431,15 @@ function updateSceneSize() {
 }
 
 
-function throwDice() {
-    const quaternion = new THREE.Quaternion();
-
-    if (simulationOn) {
-        throwBtn.innerHTML = "calculating a throw...";
-        currentResult = [0, 0];
-        diceArray.forEach(d => {
-            d.startPos = [Math.random(), Math.random(), Math.random()];
-        });
-    }
+function throwDice(callback) {
+    currentResult = [0, 0];
 
     diceArray.forEach((d, dIdx) => {
+        d.startPos = [Math.random(), Math.random(), Math.random()];
+    });
+
+    diceArray.forEach((d, dIdx) => {
+        const quaternion = new THREE.Quaternion();
         quaternion.setFromEuler(new THREE.Euler(2 * Math.PI * d.startPos[0], 0, 2 * Math.PI * d.startPos[1]));
         const force = 6 + 3 * d.startPos[2];
 
@@ -406,7 +455,14 @@ function throwDice() {
         b.allowSleep = true;
     });
 
+    // Esperar a que los dados terminen de moverse
+    setTimeout(() => {
+        const totalRoll = currentResult[0] + currentResult[1];
+        console.log(`Los dados sacaron: ${currentResult[0]} y ${currentResult[1]} = ${totalRoll}`);
+        if (callback) callback(totalRoll);
+    }, 2000); // Ajusta el tiempo según la física del dado
 }
+
 
 function createControls() {
     const gui = new GUI();
@@ -425,18 +481,6 @@ const tableroMaterial = new THREE.MeshBasicMaterial({ color: 0x008000, side: THR
 const tablero = new THREE.Mesh(tableroGeometry, tableroMaterial);
 tablero.rotation.x = -Math.PI / 2; // Girar para que quede plano
 scene.add(tablero);
-
-// Datos de las casillas
-const casillasNombres = [
-    "Inicio", "Mediterranean Ave", "Comunidad 1", "Baltic Ave", "Impuesto 1",
-    "Estación 1", "Oriental Ave", "Suerte 1", "Vermont Ave", "Connecticut Ave",
-    "Cárcel", "St. Charles Place", "Electricidad", "States Ave", "Virginia Ave",
-    "Estación 2", "St. James Place", "Comunidad 2", "Tennessee Ave", "Nueva York Ave",
-    "Parking Libre", "Kentucky Ave", "Suerte 2", "Indiana Ave", "Illinois Ave",
-    "Estación 3", "Atlantic Ave", "Ventnor Ave", "Agua", "Marvin Gardens",
-    "Ve a la Cárcel", "Pacific Ave", "North Carolina Ave", "Comunidad 3", "Pennsylvania Ave",
-    "Estación 4", "Suerte 3", "Park Place", "Impuesto 2", "Boardwalk"
-];
 
 // Crear las casillas
 const casillas = [];
@@ -473,11 +517,21 @@ function crearCasilla(x, y, propiedad) {
     casilla.position.set(x, 0.1, y);
     
     // Asociar la propiedad a la casilla
-    casilla.userData = { propiedad };
-    
+    casilla.userData = { propiedad, index: casillas.length }; // Guardar índice
+
     casillas.push(casilla);
     casillasGroup.add(casilla);
 }
+
+const playerGeometry = new THREE.SphereGeometry(0.5, 16, 16); // Una esfera como ficha
+const playerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+
+// Posicionarlo en la primera casilla
+playerMesh.position.set(casillas[0].position.x, 0.5, casillas[0].position.z);
+scene.add(playerMesh);
+
+
 
 // Raycaster para detectar clics
 const raycaster = new THREE.Raycaster();
